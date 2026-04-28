@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de Cédulas (local)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    .tipo-pill {
+        cursor: pointer;
+        padding: 10px 18px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.15s;
+        border: 2px solid transparent;
+    }
+    .tipo-pill.activo {
+        background: #334155;
+        color: white;
+        border-color: #60a5fa;
+    }
+    .tipo-pill:not(.activo) {
+        background: #e5e7eb;
+        color: #374151;
+    }
+    .tipo-pill:not(.activo):hover { background: #d1d5db; }
+</style>
+</head>
+<body class="bg-gray-50 p-4">
+<div class="max-w-7xl mx-auto">
+
+<!-- Header institucional -->
+<div class="bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 rounded-t-sm px-8 py-6 border-b-2 border-blue-400">
+    <h1 class="text-2xl font-bold text-white uppercase tracking-wide">Generador de Cédulas (local)</h1>
+</div>
+
+
+<!-- Selector de tipo -->
+<div class="bg-white border-x border-b border-slate-300 px-6 py-4 flex items-center gap-3">
+    <span class="text-sm font-bold text-slate-700 uppercase mr-3">Tipo de cédula:</span>
+    <div id="pillDemanda" class="tipo-pill activo" onclick="cambiarTipo('demanda')">📄 Traslado de Demanda</div>
+    <div id="pillTestigo" class="tipo-pill" onclick="cambiarTipo('testigo')">👤 Citación a Testigo</div>
+</div>
+
+<!-- FORMULARIO -->
+<div class="mt-4 bg-white rounded-sm shadow-md border p-6 space-y-5">
+
+    <!-- Fila superior: 2 columnas -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        <!-- Datos del Juzgado -->
+        <div class="border-l-2 border-blue-300 pl-4">
+            <h2 class="text-sm font-bold text-slate-700 uppercase mb-3">Datos del Juzgado y Expediente</h2>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Juzgado</label>
+                    <input type="text" id="juzgado" class="w-full px-3 py-2 border rounded-sm text-sm" value="Juzgado Civil, Comercial, Laboral, Familia, Niñez, Adolescencia y de Paz de Mocoretá">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Expediente N° <span class="text-red-600">*</span></label>
+                    <input type="text" id="expediente" class="w-full px-3 py-2 border rounded-sm text-sm" placeholder="IZ1 2364/1">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Carátula <span class="text-red-600">*</span></label>
+                    <input type="text" id="caratula" class="w-full px-3 py-2 border rounded-sm text-sm" placeholder="APELLIDO C/ APELLIDO S/ MATERIA">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Juez/a (Dr./Dra.)</label>
+                        <input type="text" id="juez" class="w-full px-3 py-2 border rounded-sm text-sm" value="Dr. Luis Jorge Podestá">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Secretaría (Dr./Dra.)</label>
+                        <input type="text" id="secretaria" class="w-full px-3 py-2 border rounded-sm text-sm" placeholder="Dra. Consuelo Della Rosa">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Domicilio del Juzgado</label>
+                    <input type="text" id="domicilioJuzgado" class="w-full px-3 py-2 border rounded-sm text-sm" value="Buenos Aires N° 148, ciudad de Mocoretá, provincia de Corrientes">
+                </div>
+            </div>
+        </div>
+
+        <!-- Destinatario -->
+        <div class="border-l-2 border-green-400 pl-4">
+            <h2 class="text-sm font-bold text-slate-700 uppercase mb-3">Datos del Destinatario</h2>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Destinatario/s <span class="text-red-600">*</span></label>
+                    <input type="text" id="destinatario" class="w-full px-3 py-2 border rounded-sm text-sm" placeholder="APELLIDO, NOMBRE">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Domicilio <span class="text-red-600">*</span></label>
+                    <textarea id="domicilio" rows="2" class="w-full px-3 py-2 border rounded-sm text-sm" placeholder="Calle..., N°..."></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Carácter del Domicilio</label>
+                        <select id="caracterDomicilio" class="w-full px-3 py-2 border rounded-sm text-sm">
+                            <option value="Real">Real</option>
+                            <option value="Constituido">Constituido</option>
+                            <option value="Denunciado">Denunciado</option>
+                            <option value="Electrónico">Electrónico</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Localidad</label>
+                        <input type="text" id="localidad" class="w-full px-3 py-2 border rounded-sm text-sm" value="Mocoretá">
+                    </div>
+                </div>
+                <!-- Fecha en la misma columna, debajo del destinatario -->
+                <div class="border-l-2 border-indigo-400 pl-4 mt-2 pt-2">
+                    <h2 class="text-sm font-bold text-slate-700 uppercase mb-3">Fecha</h2>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Día</label>
+                            <input type="text" id="diaFirma" class="w-full px-3 py-2 border rounded-sm text-sm" placeholder="(en blanco)">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Mes</label>
+                            <select id="mesFirma" class="w-full px-3 py-2 border rounded-sm text-sm">
+                                <option value="">-- (en blanco) --</option>
+                                <option value="enero">enero</option>
+                                <option value="febrero">febrero</option>
+                                <option value="marzo">marzo</option>
+                                <option value="abril">abril</option>
+                                <option value="mayo">mayo</option>
+                                <option value="junio">junio</option>
+                                <option value="julio">julio</option>
+                                <option value="agosto">agosto</option>
+                                <option value="septiembre">septiembre</option>
+                                <option value="octubre">octubre</option>
+                                <option value="noviembre">noviembre</option>
+                                <option value="diciembre">diciembre</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Año</label>
+                            <input type="text" id="anioFirma" class="w-full px-3 py-2 border rounded-sm text-sm" placeholder="2026">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- fin fila superior -->
+
+    <!-- Fila inferior: Transcripción | Documental (2 cols cuando hay demanda) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        <!-- Transcripción -->
+        <div class="border-l-2 border-teal-400 pl-4">
+            <h2 class="text-sm font-bold text-slate-700 uppercase mb-3">Providencia / Resolución a Transcribir</h2>
+            <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Texto <span class="text-red-600">*</span></label>
+            <p class="text-xs text-gray-500 mb-1">Pegar la parte pertinente de la providencia o resolución.</p>
+            <textarea id="textoTranscripcion" rows="10" class="w-full px-3 py-2 border rounded-sm text-sm font-mono" placeholder='N°... Mocoretá, ... de ... de 2026.- ...'></textarea>
+        </div>
+
+        <!-- DOCUMENTAL — solo Demanda -->
+        <div id="seccionDocumental" class="border-l-2 border-orange-400 pl-4">
+            <h2 class="text-sm font-bold text-slate-700 uppercase mb-3">Documental Acompañada (Traslado)</h2>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Detalle de la documental</label>
+                    <p class="text-xs text-gray-500 mb-1">Enumerar cada pieza acompañada para traslado.</p>
+                    <textarea id="detalleDocumental" rows="5" class="w-full px-3 py-2 border rounded-sm text-sm" placeholder="- Copia de la demanda en N fs.&#10;- Copia del DNI&#10;- ..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 uppercase mb-1">URL de acceso a la documental</label>
+                    <input type="text" id="urlDocumental" class="w-full px-3 py-2 border rounded-sm text-sm" placeholder="https://acorttar.link/...">
+                </div>
+                <div class="bg-blue-50 border border-blue-200 rounded p-3 text-xs text-blue-800">
+                    <strong>📱 QR:</strong> El documento Word incluirá un espacio con borde para pegar el código QR generado en otra plataforma.
+                </div>
+            </div>
+        </div>
+
+    </div><!-- fin fila inferior -->
+
+    <!-- Botones de acción -->
+    <div class="flex flex-wrap gap-2 pt-1 border-t border-gray-100">
+        <button onclick="descargarWord()" class="bg-slate-700 hover:bg-slate-800 border border-blue-400 text-white px-4 py-2.5 rounded-sm text-sm font-medium flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            Descargar Word (.docx)
+        </button>
+        <button onclick="limpiarFormulario()" class="bg-red-700 hover:bg-red-800 text-white px-4 py-2.5 rounded-sm text-sm font-medium">🗑️ Limpiar</button>
+    </div>
+
+</div><!-- fin formulario -->
+</div><!-- fin container -->
+
+<script>
+// (logo eliminado — el modelo de traslado de demanda no lleva escudo)
+
+
+// ===================================================
+// ESTADO
+// ===================================================
+let tipoCedula = 'demanda';
+
+// ===================================================
+// ART. 279 — texto exacto del modelo CEDULA TESTIMONIAL.docx
+// ===================================================
+const ART279 = 'Código Procesal Civil y Comercial. Artículo 279. Deber de asistencia. El testigo deberá comparecer a la audiencia para recibir su declaración.  En caso de ausencia injustificada podrá ser conducido a una segunda audiencia con el auxilio de la fuerza pública y se le impondrá una multa de hasta el valor de quince (15) jus.  La imposibilidad de asistir por enfermedad o fuerza mayor deberá justificarse en la forma prevista para la declaración de parte. Si se comprobase que pudo comparecer, se le impondrá multa de hasta el valor de cinco (5) jus.  En caso de considerarlo necesario, el juez fijará nueva audiencia, notificándose a las partes y disponiendo la comparecencia del testigo por medio de la fuerza pública.  Al ser citado el testigo, se le notificará el presente artículo.';
+
+// ===================================================
+// UTILIDADES
+// ===================================================
+function ph(val, fallback) {
+    return val && String(val).trim() ? String(val).trim() : `[${fallback}]`;
+}
+
+// ===================================================
+// DATOS
+// ===================================================
+function obtenerDatos() {
+    return {
+        tipo: tipoCedula,
+        juzgado:          document.getElementById('juzgado').value.trim(),
+        expediente:       document.getElementById('expediente').value.trim(),
+        caratula:         document.getElementById('caratula').value.trim(),
+        juez:             document.getElementById('juez').value.trim(),
+        secretaria:       document.getElementById('secretaria').value.trim(),
+        domicilioJuzgado: document.getElementById('domicilioJuzgado').value.trim(),
+        destinatario:     document.getElementById('destinatario').value.trim(),
+        domicilio:        document.getElementById('domicilio').value.trim(),
+        caracterDomicilio:document.getElementById('caracterDomicilio').value,
+        localidad:        document.getElementById('localidad').value.trim(),
+        textoTranscripcion: document.getElementById('textoTranscripcion').value.trim(),
+        detalleDocumental: document.getElementById('detalleDocumental').value.trim(),
+        urlDocumental:    document.getElementById('urlDocumental').value.trim(),
+        diaFirma:         document.getElementById('diaFirma').value.trim(),
+        mesFirma:         document.getElementById('mesFirma').value,
+        anioFirma:        document.getElementById('anioFirma').value.trim()
+    };
+}
+
+
+// ===================================================
+// CAMBIAR TIPO
+// ===================================================
+function cambiarTipo(tipo) {
+    tipoCedula = tipo;
+    document.getElementById('pillDemanda').classList.toggle('activo', tipo === 'demanda');
+    document.getElementById('pillTestigo').classList.toggle('activo', tipo === 'testigo');
+    document.getElementById('seccionDocumental').classList.toggle('hidden', tipo !== 'demanda');
+
+    guardarDatos();
+}
+
+// ===================================================
+// GENERACIÓN WORD
+// ===================================================
+async function descargarWord() {
+    const d = obtenerDatos();
+
+    const {
+        Document, Packer, Paragraph, TextRun, AlignmentType,
+        Table, TableRow, TableCell, WidthType, BorderStyle, HeightRule
+    } = docx;
+
+    const isTestigo = d.tipo === 'testigo';
+
+    // Fuentes: demanda→Arial (fiel al modelo), testigo→Times New Roman
+    const FONT = isTestigo ? 'Times New Roman' : 'Arial';
+    const SZ11 = 22;  // 11pt en half-points
+    const SZ12 = 24;  // 12pt en half-points
+
+    function R(text, opts = {}) {
+        return new TextRun({
+            text,
+            font: opts.font || FONT,
+            size: opts.size !== undefined ? opts.size : SZ12,
+            bold: opts.bold || false,
+            underline: opts.underline ? {} : undefined,
+            italics: opts.italics || false,
+        });
+    }
+
+    function P(runs, opts = {}) {
+        if (!Array.isArray(runs)) runs = [runs];
+        return new Paragraph({
+            alignment: opts.alignment !== undefined ? opts.alignment : AlignmentType.JUSTIFIED,
+            spacing: {
+                before: opts.before || 0,
+                after:  opts.after  !== undefined ? opts.after : 0,
+                line:   opts.line   !== undefined ? opts.line : 276,
+                lineRule: 'auto'
+            },
+            children: runs.map(r => typeof r === 'string' ? R(r) : r)
+        });
+    }
+
+    // Ambos modelos usan A4 con los mismos márgenes
+    const pageW = 11907, pageH = 16840;
+    const margins = { top: 1418, right: 1985, bottom: 1418, left: 1985 };
+
+    const children = [];
+
+    // ---- Encabezado de filas (labels : valor) — 11pt ----
+    const filas = [
+        ['Juzgado:',                   d.juzgado          || '[JUZGADO]'],
+        ['N° Expte.:',                 d.expediente       || '[EXPEDIENTE]'],
+        ['Carátula:',                  d.caratula         || '[CARÁTULA]'],
+        ['Juez/a Dr./Dra:',            d.juez             || '[JUEZ/A]'],
+        ['Secretaría del Dr./Dra:',    d.secretaria       || '[SECRETARÍA]'],
+        ['Domicilio del Juzgado:',     d.domicilioJuzgado || '[DOMICILIO JUZGADO]'],
+        ['Objeto de la Notificación:', isTestigo ? 'Citación a audiencia testimonial' : 'Correr traslado de demanda']
+    ];
+    filas.forEach(([label, valor]) => {
+        children.push(P([
+            R(label + ' ', { size: SZ11 }),
+            R(valor,       { size: SZ11 })
+        ], { line: 276 }));
+    });
+
+    // Línea en blanco
+    children.push(P([R('', { size: SZ11 })]));
+
+    // ---- Título CÉDULA ----
+    children.push(P([R('CÉDULA', { underline: true })], { alignment: AlignmentType.CENTER }));
+
+    // Línea en blanco
+    children.push(P([R('')]));
+
+    // ---- Destinatario — 11pt, line=1.15 ----
+    children.push(P([R('DESTINATARIO/S: ' + (d.destinatario || ''), { size: SZ11 })], { line: 276 }));
+    children.push(P([R('DOMICILIO: '      + (d.domicilio    || ''), { size: SZ11 })], { line: 276 }));
+    children.push(P([R('CARÁCTER DEL DOMICILIO: ' + d.caracterDomicilio, { size: SZ11 })], { line: 276 }));
+    children.push(P([R('LOCALIDAD: ', { size: SZ11 }), R(d.localidad || '', { size: SZ11, italics: true })], { line: 276 }));
+
+    // Línea en blanco
+    children.push(P([R('')]));
+
+    // ---- Apertura con 3 tabs de sangría — 11pt ----
+    children.push(P([
+        R('\t\t\tPor la presente cédula se pone en su conocimiento que en el proceso judicial mencionado se ordenó notificarle por este medio lo siguiente:', { size: SZ11 })
+    ], { line: 276 }));
+
+    // ---- Transcripción de providencia — 12pt ----
+    const transcripcionTexto = d.textoTranscripcion || '[Providencia/Resolución]';
+    children.push(P([R(transcripcionTexto)]));
+
+    // Separadores (fiel al modelo: línea vacía + línea de espacios)
+    children.push(P([R('')]));
+    children.push(P([R('  ')]));
+
+    if (isTestigo) {
+        // ---- Art. 279 ----
+        children.push(P([R(ART279)], { line: 276 }));
+        children.push(P([R('')]));
+
+    } else {
+        // ---- Documental — párrafo "Además" con 3 tabs, 12pt ----
+        const detalleRaw = d.detalleDocumental || '(enumerar cada documental que se acompañe)';
+        // Aplanar lista multilínea a texto inline
+        const detalle = detalleRaw.split('\n').map(l => l.trim().replace(/^[-•]\s*/, '')).filter(Boolean).join(', ');
+        const url = d.urlDocumental || '[URL]';
+
+        children.push(P([
+            R('\t\t\tAdemás, se acompañan las copias para traslado: ' + detalle + ', ')
+        ], { line: 276 }));
+
+        children.push(P([
+            R('Estos documentos forman parte de esta notificación y sobre las cuales Usted podrá expresar su aceptación o rechazo a través de un abogado/a de su confianza o de la defensoría oficial de su localidad siempre que Usted reúna los requisitos exigidos para su intervención, antes del vencimiento del plazo ordenado por el Juez/a.')
+        ], { line: 276 }));
+
+        children.push(P([R('')], { line: 276 }));
+        children.push(P([R('Para acceder a ellos puede hacerlo a través de:')], { line: 276 }));
+        children.push(P([R('Cargar la URL en su navegador.')], { line: 276 }));
+        children.push(P([R('URL: '), R(url, { underline: true })]));
+        children.push(P([R('')]));
+        children.push(P([R('Escanear el siguiente QR')]));
+
+        // Recuadro para pegar el QR (tabla centrada con borde)
+        const borde = { style: BorderStyle.SINGLE, size: 8, color: '555555' };
+        const bordes = { top: borde, bottom: borde, left: borde, right: borde };
+        children.push(new Table({
+            width: { size: 3000, type: WidthType.DXA },
+            alignment: AlignmentType.CENTER,
+            columnWidths: [3000],
+            rows: [new TableRow({
+                height: { value: 3000, rule: HeightRule.ATLEAST },
+                children: [new TableCell({
+                    borders: bordes,
+                    width: { size: 3000, type: WidthType.DXA },
+                    margins: { top: 200, bottom: 200, left: 200, right: 200 },
+                    children: [
+                        new Paragraph({
+                            alignment: AlignmentType.CENTER,
+                            spacing: { before: 600, after: 0 },
+                            children: [R('[ Pegar aquí el código QR ]', { size: 18, italics: true })]
+                        })
+                    ]
+                })]
+            })]
+        }));
+
+        children.push(P([R('')]));
+        children.push(P([R('')]));
+    }
+
+    // ---- Cierre ----
+    children.push(P([R('QUEDA UD. LEGALMENTE NOTIFICADO.-')]));
+    children.push(P([R('')]));
+
+    const dia  = d.diaFirma  || '___';
+    const mes  = d.mesFirma  || '__________';
+    const anio = d.anioFirma || '____';
+    children.push(P([R(`Corrientes, ${dia} de ${mes} de ${anio}.-`)]));
+
+    // Líneas finales en blanco (como el modelo)
+    children.push(P([R('')]));
+    children.push(P([R('')]));
+    children.push(P([R('')]));
+
+    // ---- Documento ----
+    const doc = new Document({
+        styles: { default: { document: { run: { font: FONT, size: SZ12 } } } },
+        sections: [{
+            properties: { page: { size: { width: pageW, height: pageH }, margin: margins } },
+            children
+        }]
+    });
+
+    try {
+        const blob = await Packer.toBlob(doc);
+        const tipoStr = isTestigo ? 'Testimonial' : 'TrasladoDemanda';
+        const dest = (d.destinatario || 'destinatario').replace(/\s+/g, '_').replace(/[^\w-]/g, '');
+        saveAs(blob, `Cedula_${tipoStr}_${dest}.docx`);
+    } catch(e) {
+        console.error('Error al generar Word:', e);
+        alert('Error al generar el documento: ' + e.message);
+    }
+}
+
+// ===================================================
+// GUARDADO LOCAL
+// ===================================================
+function guardarDatos() {
+    const datos = { __tipo: tipoCedula };
+    document.querySelectorAll('input, select, textarea').forEach(el => {
+        if (el.id) datos[el.id] = el.type === 'checkbox' ? el.checked : el.value;
+    });
+    try { localStorage.setItem('datosCedula', JSON.stringify(datos)); } catch(e) {}
+}
+
+function cargarDatos() {
+    try {
+        const raw = localStorage.getItem('datosCedula');
+        if (!raw) return;
+        const datos = JSON.parse(raw);
+        Object.keys(datos).forEach(k => {
+            if (k === '__tipo') return;
+            const el = document.getElementById(k);
+            if (!el) return;
+            if (el.type === 'checkbox') el.checked = datos[k];
+            else el.value = datos[k];
+        });
+        if (datos.__tipo) cambiarTipo(datos.__tipo);
+    } catch(e) { console.error(e); }
+}
+
+function limpiarFormulario() {
+    if (!confirm('¿Limpiar el formulario? Se perderán los datos ingresados.')) return;
+    document.querySelectorAll('input[type="text"], input[type="date"], input[type="time"], textarea').forEach(el => el.value = '');
+    document.getElementById('juzgado').value = 'Juzgado Civil, Comercial, Laboral, Familia, Niñez, Adolescencia y de Paz de Mocoretá';
+    document.getElementById('juez').value = 'Dr. Luis Jorge Podestá';
+    document.getElementById('domicilioJuzgado').value = 'Buenos Aires N° 148, ciudad de Mocoretá, provincia de Corrientes';
+    document.getElementById('localidad').value = 'Mocoretá';
+    document.getElementById('anioFirma').value = new Date().getFullYear();
+    document.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+    localStorage.removeItem('datosCedula');
+    cambiarTipo('demanda');
+}
+
+// ===================================================
+// INIT
+// ===================================================
+window.addEventListener('load', () => {
+    cargarDatos();
+    if (!document.getElementById('anioFirma').value)
+        document.getElementById('anioFirma').value = new Date().getFullYear();
+    document.querySelectorAll('input, select, textarea').forEach(el => {
+        el.addEventListener('input',  guardarDatos);
+        el.addEventListener('change', guardarDatos);
+    });
+
+    cambiarTipo('demanda');
+    setInterval(guardarDatos, 30000);
+});
+</script>
+</body>
+</html>
