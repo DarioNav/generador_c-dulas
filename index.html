@@ -205,7 +205,8 @@ let tipoCedula = 'demanda';
 // ===================================================
 // ART. 279 — texto exacto del modelo CEDULA TESTIMONIAL.docx
 // ===================================================
-const ART279 = 'Código Procesal Civil y Comercial. Artículo 279. Deber de asistencia. El testigo deberá comparecer a la audiencia para recibir su declaración.  En caso de ausencia injustificada podrá ser conducido a una segunda audiencia con el auxilio de la fuerza pública y se le impondrá una multa de hasta el valor de quince (15) jus.  La imposibilidad de asistir por enfermedad o fuerza mayor deberá justificarse en la forma prevista para la declaración de parte. Si se comprobase que pudo comparecer, se le impondrá multa de hasta el valor de cinco (5) jus.  En caso de considerarlo necesario, el juez fijará nueva audiencia, notificándose a las partes y disponiendo la comparecencia del testigo por medio de la fuerza pública.  Al ser citado el testigo, se le notificará el presente artículo.';
+const ART279_TITULO = 'Código Procesal Civil y Comercial. Artículo 279. Deber de asistencia.';
+const ART279_CUERPO = 'El testigo deberá comparecer a la audiencia para recibir su declaración.  En caso de ausencia injustificada podrá ser conducido a una segunda audiencia con el auxilio de la fuerza pública y se le impondrá una multa de hasta el valor de quince (15) jus.  La imposibilidad de asistir por enfermedad o fuerza mayor deberá justificarse en la forma prevista para la declaración de parte. Si se comprobase que pudo comparecer, se le impondrá multa de hasta el valor de cinco (5) jus.  En caso de considerarlo necesario, el juez fijará nueva audiencia, notificándose a las partes y disponiendo la comparecencia del testigo por medio de la fuerza pública.  Al ser citado el testigo, se le notificará el presente artículo.';
 
 // ===================================================
 // UTILIDADES
@@ -291,6 +292,7 @@ async function descargarWord() {
                 line:   opts.line   !== undefined ? opts.line : 276,
                 lineRule: 'auto'
             },
+            indent: opts.indent || undefined,
             children: runs.map(r => typeof r === 'string' ? R(r) : r)
         });
     }
@@ -309,7 +311,7 @@ async function descargarWord() {
         ['Juez/a Dr./Dra:',            d.juez             || '[JUEZ/A]'],
         ['Secretaría del Dr./Dra:',    d.secretaria       || '[SECRETARÍA]'],
         ['Domicilio del Juzgado:',     d.domicilioJuzgado || '[DOMICILIO JUZGADO]'],
-        ['Objeto de la Notificación:', isTestigo ? 'Citación a audiencia testimonial' : 'Correr traslado de demanda']
+        ['Objeto de la Notificación:', isTestigo ? 'Citación a audiencia testimonial' : 'Traslado de la demanda']
     ];
     filas.forEach(([label, valor]) => {
         children.push(P([
@@ -322,7 +324,7 @@ async function descargarWord() {
     children.push(P([R('', { size: SZ11 })]));
 
     // ---- Título CÉDULA ----
-    children.push(P([R('CÉDULA', { underline: true })], { alignment: AlignmentType.CENTER }));
+    children.push(P([R('CÉDULA', { underline: true, bold: true })], { alignment: AlignmentType.CENTER }));
 
     // Línea en blanco
     children.push(P([R('')]));
@@ -336,10 +338,10 @@ async function descargarWord() {
     // Línea en blanco
     children.push(P([R('')]));
 
-    // ---- Apertura con 3 tabs de sangría — 11pt ----
+    // ---- Apertura con sangría de primera línea — 11pt ----
     children.push(P([
-        R('\t\t\tPor la presente cédula se pone en su conocimiento que en el proceso judicial mencionado se ordenó notificarle por este medio lo siguiente:', { size: SZ11 })
-    ], { line: 276 }));
+        R('Por la presente cédula se pone en su conocimiento que en el proceso judicial mencionado se ordenó notificarle por este medio lo siguiente:', { size: SZ11 })
+    ], { line: 276, indent: { firstLine: 1440 } }));
 
     // ---- Transcripción de providencia — 12pt ----
     const transcripcionTexto = d.textoTranscripcion || '[Providencia/Resolución]';
@@ -350,8 +352,11 @@ async function descargarWord() {
     children.push(P([R('  ')]));
 
     if (isTestigo) {
-        // ---- Art. 279 ----
-        children.push(P([R(ART279)], { line: 276 }));
+        // ---- Art. 279: título en negrita + cuerpo entre comillas ----
+        children.push(P([
+            R(ART279_TITULO, { bold: true }),
+            R(' "' + ART279_CUERPO + '"')
+        ], { line: 276 }));
         children.push(P([R('')]));
 
     } else {
@@ -362,8 +367,10 @@ async function descargarWord() {
         const url = d.urlDocumental || '[URL]';
 
         children.push(P([
-            R('\t\t\tAdemás, se acompañan las copias para traslado: ' + detalle + ', ')
-        ], { line: 276 }));
+            R('Además, se acompañan las copias para traslado: '),
+            R(detalle, { italics: true }),
+            R(', ')
+        ], { line: 276, indent: { firstLine: 1440 } }));
 
         children.push(P([
             R('Estos documentos forman parte de esta notificación y sobre las cuales Usted podrá expresar su aceptación o rechazo a través de un abogado/a de su confianza o de la defensoría oficial de su localidad siempre que Usted reúna los requisitos exigidos para su intervención, antes del vencimiento del plazo ordenado por el Juez/a.')
@@ -375,29 +382,19 @@ async function descargarWord() {
         children.push(P([R('URL: '), R(url, { underline: true })]));
         children.push(P([R('')]));
         children.push(P([R('Escanear el siguiente QR')]));
+        children.push(P([R('')]));
 
-        // Recuadro para pegar el QR (tabla centrada con borde)
-        const borde = { style: BorderStyle.SINGLE, size: 8, color: '555555' };
-        const bordes = { top: borde, bottom: borde, left: borde, right: borde };
-        children.push(new Table({
-            width: { size: 3000, type: WidthType.DXA },
+        // Recuadro para QR — usando bordes de párrafo (más compatible que Table)
+        const bordQR = { style: BorderStyle.SINGLE, size: 8, color: '777777' };
+        children.push(new Paragraph({
             alignment: AlignmentType.CENTER,
-            columnWidths: [3000],
-            rows: [new TableRow({
-                height: { value: 3000, rule: HeightRule.ATLEAST },
-                children: [new TableCell({
-                    borders: bordes,
-                    width: { size: 3000, type: WidthType.DXA },
-                    margins: { top: 200, bottom: 200, left: 200, right: 200 },
-                    children: [
-                        new Paragraph({
-                            alignment: AlignmentType.CENTER,
-                            spacing: { before: 600, after: 0 },
-                            children: [R('[ Pegar aquí el código QR ]', { size: 18, italics: true })]
-                        })
-                    ]
-                })]
-            })]
+            border: { top: bordQR, bottom: bordQR, left: bordQR, right: bordQR },
+            spacing: { before: 0, after: 0, line: 276, lineRule: 'auto' },
+            children: [
+                new TextRun({ text: '', font: FONT, size: SZ12, break: 3 }),
+                new TextRun({ text: '[ Pegar aquí el código QR ]', font: FONT, size: 18, italics: true }),
+                new TextRun({ text: '', font: FONT, size: SZ12, break: 3 }),
+            ]
         }));
 
         children.push(P([R('')]));
@@ -413,28 +410,26 @@ async function descargarWord() {
     const anio = d.anioFirma || '____';
     children.push(P([R(`Corrientes, ${dia} de ${mes} de ${anio}.-`)]));
 
-    // Líneas finales en blanco (como el modelo)
     children.push(P([R('')]));
     children.push(P([R('')]));
     children.push(P([R('')]));
 
-    // ---- Documento ----
-    const doc = new Document({
-        styles: { default: { document: { run: { font: FONT, size: SZ12 } } } },
-        sections: [{
-            properties: { page: { size: { width: pageW, height: pageH }, margin: margins } },
-            children
-        }]
-    });
-
+    // ---- Documento — todo dentro del try para capturar errores de construcción ----
     try {
+        const doc = new Document({
+            styles: { default: { document: { run: { font: FONT, size: SZ12 } } } },
+            sections: [{
+                properties: { page: { size: { width: pageW, height: pageH }, margin: margins } },
+                children
+            }]
+        });
         const blob = await Packer.toBlob(doc);
         const tipoStr = isTestigo ? 'Testimonial' : 'TrasladoDemanda';
         const dest = (d.destinatario || 'destinatario').replace(/\s+/g, '_').replace(/[^\w-]/g, '');
         saveAs(blob, `Cedula_${tipoStr}_${dest}.docx`);
     } catch(e) {
         console.error('Error al generar Word:', e);
-        alert('Error al generar el documento: ' + e.message);
+        alert('Error al generar el documento Word:\n' + (e.message || e));
     }
 }
 
