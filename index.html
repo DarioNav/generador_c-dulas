@@ -34,8 +34,9 @@
 <div class="max-w-7xl mx-auto">
 
 <!-- Header institucional -->
-<div class="bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 rounded-t-sm px-8 py-6 border-b-2 border-blue-400">
+<div class="bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 rounded-t-sm px-8 py-6 border-b-2 border-blue-400 flex items-end justify-between">
     <h1 class="text-2xl font-bold text-white uppercase tracking-wide">Generador de Cédulas (local)</h1>
+    <span class="text-xs text-slate-400 italic">Desarrollado por darionavarro_ok</span>
 </div>
 
 
@@ -58,11 +59,11 @@
             <div class="space-y-3">
                 <div>
                     <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Juzgado</label>
-                    <input type="text" id="juzgado" class="w-full px-3 py-2 border rounded-sm text-sm" value="Juzgado Civil, Comercial, Laboral, Familia, Niñez, Adolescencia y de Paz de Mocoretá">
+                    <input type="text" id="juzgado" class="w-full px-3 py-2 border rounded-sm text-sm" placeholder="Juzgado Civil y Comercial N° 17 de la ciudad de Corrientes">
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Expediente N° <span class="text-red-600">*</span></label>
-                    <input type="text" id="expediente" class="w-full px-3 py-2 border rounded-sm text-sm" placeholder="IZ1 2364/1">
+                    <input type="text" id="expediente" class="w-full px-3 py-2 border rounded-sm text-sm" placeholder="123.456">
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Carátula <span class="text-red-600">*</span></label>
@@ -71,16 +72,16 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Juez/a (Dr./Dra.)</label>
-                        <input type="text" id="juez" class="w-full px-3 py-2 border rounded-sm text-sm" value="Dr. Luis Jorge Podestá">
+                        <input type="text" id="juez" class="w-full px-3 py-2 border rounded-sm text-sm" placeholder="Dr./Dra. Nombre y apellido">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Secretaría (Dr./Dra.)</label>
-                        <input type="text" id="secretaria" class="w-full px-3 py-2 border rounded-sm text-sm" placeholder="Dra. Consuelo Della Rosa">
+                        <input type="text" id="secretaria" class="w-full px-3 py-2 border rounded-sm text-sm" placeholder="Dr./Dra. Nombre y apellido">
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Domicilio del Juzgado</label>
-                    <input type="text" id="domicilioJuzgado" class="w-full px-3 py-2 border rounded-sm text-sm" value="Buenos Aires N° 148, ciudad de Mocoretá, provincia de Corrientes">
+                    <input type="text" id="domicilioJuzgado" class="w-full px-3 py-2 border rounded-sm text-sm" placeholder="Pellegrini 934, Corrientes, provincia de Corrientes">
                 </div>
             </div>
         </div>
@@ -109,7 +110,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Localidad</label>
-                        <input type="text" id="localidad" class="w-full px-3 py-2 border rounded-sm text-sm" value="Mocoretá">
+                        <input type="text" id="localidad" class="w-full px-3 py-2 border rounded-sm text-sm" placeholder="Corrientes, Goya, etc.">
                     </div>
                 </div>
                 <!-- Fecha en la misma columna, debajo del destinatario -->
@@ -157,7 +158,7 @@
             <h2 class="text-sm font-bold text-slate-700 uppercase mb-3">Providencia / Resolución a Transcribir</h2>
             <label class="block text-xs font-medium text-gray-600 uppercase mb-1">Texto <span class="text-red-600">*</span></label>
             <p class="text-xs text-gray-500 mb-1">Pegar la parte pertinente de la providencia o resolución.</p>
-            <textarea id="textoTranscripcion" rows="10" class="w-full px-3 py-2 border rounded-sm text-sm font-mono" placeholder='N°... Mocoretá, ... de ... de 2026.- ...'></textarea>
+            <textarea id="textoTranscripcion" rows="10" class="w-full px-3 py-2 border rounded-sm text-sm font-mono" placeholder='N°... Corrientes, ... de ... de 2026.- Texto de la resolución...'></textarea>
         </div>
 
         <!-- DOCUMENTAL — solo Demanda -->
@@ -191,6 +192,10 @@
     </div>
 
 </div><!-- fin formulario -->
+
+<footer class="mt-4 text-center text-xs text-slate-700 italic py-3">
+    Instagram: darionavarro_ok
+</footer>
 </div><!-- fin container -->
 
 <script>
@@ -463,10 +468,6 @@ function cargarDatos() {
 function limpiarFormulario() {
     if (!confirm('¿Limpiar el formulario? Se perderán los datos ingresados.')) return;
     document.querySelectorAll('input[type="text"], input[type="date"], input[type="time"], textarea').forEach(el => el.value = '');
-    document.getElementById('juzgado').value = 'Juzgado Civil, Comercial, Laboral, Familia, Niñez, Adolescencia y de Paz de Mocoretá';
-    document.getElementById('juez').value = 'Dr. Luis Jorge Podestá';
-    document.getElementById('domicilioJuzgado').value = 'Buenos Aires N° 148, ciudad de Mocoretá, provincia de Corrientes';
-    document.getElementById('localidad').value = 'Mocoretá';
     document.getElementById('anioFirma').value = new Date().getFullYear();
     document.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
     localStorage.removeItem('datosCedula');
